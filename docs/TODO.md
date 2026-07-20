@@ -12,12 +12,12 @@
 - [x] Member Repository
 - [x] Member Service
 - [x] Member Controller CRUD
-- [ ] 會員列表與表單
-- [ ] Axios 串接
+- [x] 會員列表與表單
+- [x] Axios 串接
 
 ## Phase 3：商品功能
-- [ ] PhoneProduct CRUD
-- [ ] 商品列表與表單
+- [x] PhoneProduct CRUD
+- [x] 商品列表與表單
 
 ## Phase 4：訂單功能
 - [ ] CustomerOrder CRUD
