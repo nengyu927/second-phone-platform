@@ -16,10 +16,16 @@ import org.springframework.web.bind.annotation.RestController;
 import com.example.secondphone.entity.Member;
 import com.example.secondphone.service.MemberService;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/members")
+@Tag(name = "Member Management", description = "會員資料 CRUD。課堂展示版本的密碼尚未加密且可能出現在 API 回應。")
 public class MemberController {
 
     private final MemberService memberService;
@@ -29,28 +35,57 @@ public class MemberController {
     }
 
     @GetMapping
+    @Operation(summary = "查詢全部會員")
+    @ApiResponse(responseCode = "200", description = "查詢成功")
     public ResponseEntity<List<Member>> findAll() {
         return ResponseEntity.ok(memberService.findAll());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Member> findById(@PathVariable Long id) {
+    @Operation(summary = "查詢單一會員")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "查詢成功"),
+            @ApiResponse(responseCode = "404", description = "會員不存在")
+    })
+    public ResponseEntity<Member> findById(
+            @Parameter(description = "會員 ID", example = "1") @PathVariable Long id) {
         return ResponseEntity.ok(memberService.findById(id));
     }
 
     @PostMapping
+    @Operation(summary = "新增會員")
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "新增成功"),
+            @ApiResponse(responseCode = "400", description = "輸入資料驗證失敗"),
+            @ApiResponse(responseCode = "409", description = "帳號已存在")
+    })
     public ResponseEntity<Member> create(@Valid @RequestBody Member member) {
         Member createdMember = memberService.create(member);
         return ResponseEntity.created(URI.create("/api/members/" + createdMember.getId())).body(createdMember);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Member> update(@PathVariable Long id, @Valid @RequestBody Member member) {
+    @Operation(summary = "修改會員")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "修改成功"),
+            @ApiResponse(responseCode = "400", description = "輸入資料驗證失敗"),
+            @ApiResponse(responseCode = "404", description = "會員不存在"),
+            @ApiResponse(responseCode = "409", description = "帳號已被其他會員使用")
+    })
+    public ResponseEntity<Member> update(
+            @Parameter(description = "會員 ID", example = "1") @PathVariable Long id,
+            @Valid @RequestBody Member member) {
         return ResponseEntity.ok(memberService.update(id, member));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
+    @Operation(summary = "刪除會員")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "刪除成功"),
+            @ApiResponse(responseCode = "404", description = "會員不存在")
+    })
+    public ResponseEntity<Void> delete(
+            @Parameter(description = "會員 ID", example = "1") @PathVariable Long id) {
         memberService.delete(id);
         return ResponseEntity.noContent().build();
     }
