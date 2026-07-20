@@ -8,10 +8,10 @@
 - [x] 建立 Codex 指令
 
 ## Phase 2：會員功能
-- [ ] Member Entity
-- [ ] Member Repository
-- [ ] Member Service
-- [ ] Member Controller CRUD
+- [x] Member Entity
+- [x] Member Repository
+- [x] Member Service
+- [x] Member Controller CRUD
 - [ ] 會員列表與表單
 - [ ] Axios 串接
 
