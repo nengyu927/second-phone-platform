@@ -1,15 +1,18 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import HomeView from '../views/HomeView.vue'
+import DashboardView from '../views/DashboardView.vue'
 import MemberView from '../views/MemberView.vue'
 import ProductView from '../views/ProductView.vue'
+import OrderView from '../views/OrderView.vue'
+import RepairView from '../views/RepairView.vue'
 import PlaceholderView from '../views/PlaceholderView.vue'
 
 const routes = [
-  { path: '/', component: HomeView },
+  { path: '/', redirect: '/dashboard' },
+  { path: '/dashboard', component: DashboardView },
   { path: '/members', component: MemberView },
   { path: '/products', component: ProductView },
-  { path: '/orders', component: PlaceholderView, props: { title: '訂單管理' } },
-  { path: '/repairs', component: PlaceholderView, props: { title: '維修管理' } },
+  { path: '/orders', component: OrderView },
+  { path: '/repairs', component: RepairView },
   { path: '/admin', component: PlaceholderView, props: { title: '後台管理' } }
 ]
 

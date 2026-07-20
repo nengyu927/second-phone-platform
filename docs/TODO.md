@@ -20,17 +20,17 @@
 - [x] 商品列表與表單
 
 ## Phase 4：訂單功能
-- [ ] CustomerOrder CRUD
-- [ ] OrderItem CRUD
-- [ ] 訂單頁面
+- [x] CustomerOrder CRUD
+- [ ] OrderItem CRUD（本期簡化為單一商品訂單）
+- [x] 訂單頁面
 
 ## Phase 5：維修功能
-- [ ] Repair CRUD
-- [ ] 維修進度頁面
+- [x] Repair CRUD
+- [x] 維修進度頁面
 
 ## Phase 6：後台
-- [ ] Dashboard
-- [ ] 會員管理
-- [ ] 商品管理
-- [ ] 訂單管理
-- [ ] 維修管理
+- [x] Dashboard
+- [x] 會員管理
+- [x] 商品管理
+- [x] 訂單管理
+- [x] 維修管理

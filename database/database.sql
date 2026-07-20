@@ -35,3 +35,44 @@ CREATE TABLE IF NOT EXISTS products (
     updated_at DATETIME NOT NULL,
     PRIMARY KEY (id)
 );
+
+CREATE TABLE IF NOT EXISTS orders (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    member_id BIGINT NOT NULL,
+    product_id BIGINT NOT NULL,
+    quantity INT NOT NULL DEFAULT 1,
+    unit_price DECIMAL(12,2) NOT NULL,
+    total_amount DECIMAL(12,2) NOT NULL,
+    recipient_name VARCHAR(100) NOT NULL,
+    recipient_phone VARCHAR(20) NOT NULL,
+    shipping_address VARCHAR(300) NOT NULL,
+    payment_method VARCHAR(30) NOT NULL DEFAULT 'CASH_ON_DELIVERY',
+    order_status VARCHAR(30) NOT NULL DEFAULT 'PENDING',
+    note TEXT,
+    created_at DATETIME NOT NULL,
+    updated_at DATETIME NOT NULL,
+    PRIMARY KEY (id),
+    INDEX idx_orders_member_id (member_id),
+    INDEX idx_orders_product_id (product_id),
+    INDEX idx_orders_status (order_status)
+);
+
+CREATE TABLE IF NOT EXISTS repair_orders (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    member_id BIGINT NOT NULL,
+    device_brand VARCHAR(50) NOT NULL,
+    device_model VARCHAR(100) NOT NULL,
+    imei VARCHAR(30),
+    problem_description TEXT NOT NULL,
+    repair_status VARCHAR(30) NOT NULL DEFAULT 'RECEIVED',
+    estimated_cost DECIMAL(12,2),
+    final_cost DECIMAL(12,2),
+    technician_note TEXT,
+    received_at DATETIME NOT NULL,
+    completed_at DATETIME,
+    created_at DATETIME NOT NULL,
+    updated_at DATETIME NOT NULL,
+    PRIMARY KEY (id),
+    INDEX idx_repairs_member_id (member_id),
+    INDEX idx_repairs_status (repair_status)
+);

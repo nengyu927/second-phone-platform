@@ -10,11 +10,11 @@
 - Version Control: GitHub
 
 ## 五大功能
-1. 會員管理
-2. 二手手機商品管理
-3. 訂單管理
-4. 維修管理
-5. 後台管理
+1. 會員管理：已完成前後端 CRUD
+2. 二手手機商品管理：已完成前後端 CRUD 與搜尋
+3. 訂單管理：已完成前後端 CRUD
+4. 維修管理：已完成前後端 CRUD
+5. 後台儀表板：已完成統計、最近資料與快捷操作
 
 ## 啟動方式
 
@@ -29,6 +29,14 @@ cd frontend
 npm install
 npm run dev
 ```
+
+Dashboard: http://localhost:5173/dashboard
+
+## Dashboard API
+
+- `GET /api/dashboard`：完整統計與最近資料
+- `GET /api/dashboard/summary`：統計摘要
+- `GET /api/dashboard/recent`：每類最近 5 筆資料
 
 ## 測試
 - Backend: http://localhost:8080/api/test

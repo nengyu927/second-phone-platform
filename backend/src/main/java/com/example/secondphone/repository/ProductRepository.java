@@ -8,6 +8,10 @@ import com.example.secondphone.entity.Product;
 
 public interface ProductRepository extends JpaRepository<Product, Long> {
 
+    List<Product> findTop5ByOrderByCreatedAtDesc();
+
+    long countByStockLessThanEqual(Integer stock);
+
     List<Product> findByBrandContainingIgnoreCase(String brand);
 
     List<Product> findByProductNameContainingIgnoreCase(String productName);
