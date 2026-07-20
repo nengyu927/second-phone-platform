@@ -3,6 +3,7 @@ package com.example.secondphone.service;
 import java.math.BigDecimal;
 import java.util.List;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import com.example.secondphone.dto.DashboardRecentDataResponse;
 import com.example.secondphone.dto.DashboardRecentDataResponse.*;
 import com.example.secondphone.dto.DashboardResponse;
@@ -11,6 +12,7 @@ import com.example.secondphone.entity.*;
 import com.example.secondphone.repository.*;
 
 @Service
+@Transactional(readOnly = true)
 public class DashboardService {
     private static final List<String> INACTIVE_REPAIR_STATUSES=List.of("COMPLETED","RETURNED","CANCELLED");
     private final MemberRepository members; private final ProductRepository products;
@@ -32,9 +34,9 @@ public class DashboardService {
         List<RecentProductResponse> recentProducts=safe(products.findTop5ByOrderByCreatedAtDesc()).stream().limit(5)
                 .map(p->new RecentProductResponse(p.getId(),p.getProductName(),p.getPrice(),p.getStock(),p.getStatus(),p.getCreatedAt())).toList();
         List<RecentOrderResponse> recentOrders=safe(orders.findTop5ByOrderByCreatedAtDesc()).stream().limit(5)
-                .map(o->new RecentOrderResponse(o.getId(),o.getMemberId(),o.getProductId(),zeroIfNull(o.getTotalAmount()),o.getOrderStatus(),o.getCreatedAt())).toList();
+                .map(o->new RecentOrderResponse(o.getId(),o.getMember().getId(),o.getProduct().getId(),zeroIfNull(o.getTotalAmount()),o.getOrderStatus(),o.getCreatedAt())).toList();
         List<RecentRepairResponse> recentRepairs=safe(repairs.findTop5ByOrderByCreatedAtDesc()).stream().limit(5)
-                .map(r->new RecentRepairResponse(r.getId(),r.getMemberId(),r.getDeviceBrand(),r.getDeviceModel(),r.getRepairStatus(),r.getReceivedAt(),r.getCreatedAt())).toList();
+                .map(r->new RecentRepairResponse(r.getId(),r.getMember().getId(),r.getDeviceBrand(),r.getDeviceModel(),r.getRepairStatus(),r.getReceivedDate(),r.getCreatedAt())).toList();
         return new DashboardRecentDataResponse(recentMembers,recentProducts,recentOrders,recentRepairs);
     }
     public DashboardResponse getDashboard(){return new DashboardResponse(getSummary(),getRecentData());}

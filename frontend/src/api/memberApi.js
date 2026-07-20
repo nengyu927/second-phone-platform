@@ -1,7 +1,7 @@
 import http from './http'
 
-export async function getMembers() {
-  return (await http.get('/members')).data
+export async function getMembers(params = {}) {
+  return (await http.get('/members', { params })).data
 }
 
 export async function getMemberById(id) {

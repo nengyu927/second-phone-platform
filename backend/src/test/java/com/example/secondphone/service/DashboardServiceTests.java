@@ -31,6 +31,6 @@ class DashboardServiceTests {
     @Test void limitsEveryRecentListToFive(){when(members.findTop5ByOrderByCreatedAtDesc()).thenReturn(IntStream.range(0,6).mapToObj(i->member()).toList());when(products.findTop5ByOrderByCreatedAtDesc()).thenReturn(IntStream.range(0,6).mapToObj(i->product()).toList());when(orders.findTop5ByOrderByCreatedAtDesc()).thenReturn(IntStream.range(0,6).mapToObj(i->order()).toList());when(repairs.findTop5ByOrderByCreatedAtDesc()).thenReturn(IntStream.range(0,6).mapToObj(i->repair()).toList());DashboardRecentDataResponse r=service.getRecentData();assertEquals(5,r.getRecentMembers().size());assertEquals(5,r.getRecentProducts().size());assertEquals(5,r.getRecentOrders().size());assertEquals(5,r.getRecentRepairs().size());}
     private Member member(){Member m=new Member();m.setAccount("user");m.setName("User");return m;}
     private Product product(){Product p=new Product();p.setProductName("Phone");p.setPrice(BigDecimal.TEN);p.setStock(1);return p;}
-    private Order order(){Order o=new Order();o.setTotalAmount(null);o.setOrderStatus("PENDING");return o;}
-    private RepairOrder repair(){RepairOrder r=new RepairOrder();r.setDeviceBrand("Apple");r.setDeviceModel("iPhone");r.setRepairStatus("RECEIVED");return r;}
+    private Order order(){Order o=new Order();o.setMember(member());o.setProduct(product());o.setTotalAmount(null);o.setOrderStatus("PENDING");return o;}
+    private RepairOrder repair(){RepairOrder r=new RepairOrder();r.setMember(member());r.setDeviceBrand("Apple");r.setDeviceModel("iPhone");r.setRepairStatus("RECEIVED");return r;}
 }

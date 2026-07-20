@@ -4,7 +4,6 @@ import MemberView from '../views/MemberView.vue'
 import ProductView from '../views/ProductView.vue'
 import OrderView from '../views/OrderView.vue'
 import RepairView from '../views/RepairView.vue'
-import PlaceholderView from '../views/PlaceholderView.vue'
 
 const routes = [
   { path: '/', redirect: '/dashboard' },
@@ -13,7 +12,7 @@ const routes = [
   { path: '/products', component: ProductView },
   { path: '/orders', component: OrderView },
   { path: '/repairs', component: RepairView },
-  { path: '/admin', component: PlaceholderView, props: { title: '後台管理' } }
+  { path: '/:pathMatch(.*)*', redirect: '/dashboard' }
 ]
 
 export default createRouter({

@@ -22,6 +22,14 @@ public class MemberService {
         return memberRepository.findAll();
     }
 
+    public List<Member> search(String keyword) {
+        if (keyword == null || keyword.isBlank()) {
+            return findAll();
+        }
+        String value = keyword.trim();
+        return memberRepository.findByAccountContainingIgnoreCaseOrNameContainingIgnoreCase(value, value);
+    }
+
     public Member findById(Long id) {
         return memberRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "會員不存在"));

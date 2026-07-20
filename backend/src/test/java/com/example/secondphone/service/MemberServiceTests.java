@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
+import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -106,6 +107,15 @@ class MemberServiceTests {
         memberService.delete(1L);
 
         verify(memberRepository).delete(existing);
+    }
+
+    @Test
+    void searchMembersByAccountOrName() {
+        Member matching = member("user01", "王小明");
+        when(memberRepository.findByAccountContainingIgnoreCaseOrNameContainingIgnoreCase("王", "王"))
+                .thenReturn(List.of(matching));
+
+        assertEquals(List.of(matching), memberService.search(" 王 "));
     }
 
     private Member member(String account, String name) {

@@ -2,44 +2,65 @@ package com.example.secondphone.service;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+import com.example.secondphone.dto.OrderRequest;
+import com.example.secondphone.dto.OrderResponse;
+import com.example.secondphone.entity.Member;
 import com.example.secondphone.entity.Order;
+import com.example.secondphone.entity.Product;
 import com.example.secondphone.repository.MemberRepository;
 import com.example.secondphone.repository.OrderRepository;
 import com.example.secondphone.repository.ProductRepository;
 
 @Service
+@Transactional(readOnly=true)
 public class OrderService {
-    private final OrderRepository orderRepository;
-    private final MemberRepository memberRepository;
-    private final ProductRepository productRepository;
+    private static final Set<String> ORDER_STATUSES=Set.of("PENDING","CONFIRMED","SHIPPED","COMPLETED","CANCELLED");
+    private final OrderRepository orders; private final MemberRepository members; private final ProductRepository products;
+    public OrderService(OrderRepository orders,MemberRepository members,ProductRepository products){this.orders=orders;this.members=members;this.products=products;}
 
-    public OrderService(OrderRepository orders, MemberRepository members, ProductRepository products) {
-        orderRepository=orders; memberRepository=members; productRepository=products;
+    public List<OrderResponse> getAllOrders(){return orders.findAllByOrderByCreatedAtDesc().stream().map(this::toResponse).toList();}
+    public OrderResponse getOrderById(Long id){return toResponse(findOrder(id));}
+    public List<OrderResponse> searchOrders(String keyword,String status){
+        String key=keyword==null?"":keyword.trim().toLowerCase(Locale.ROOT);
+        String wanted=status==null?"":status.trim();
+        return orders.findAllByOrderByCreatedAtDesc().stream()
+            .filter(o->wanted.isBlank()||wanted.equalsIgnoreCase(o.getOrderStatus()))
+            .filter(o->key.isBlank()||contains(o.getMember().getName(),key)||contains(o.getMember().getAccount(),key)||contains(o.getProduct().getProductName(),key)||contains(o.getRecipientName(),key))
+            .map(this::toResponse).toList();
     }
-    public List<Order> findAll(){return orderRepository.findAll();}
-    public Order findById(Long id){return orderRepository.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,"訂單不存在"));}
-    public Order create(Order order){validate(order); calculateTotal(order); return orderRepository.save(order);}
-    public Order update(Long id, Order input){
-        validate(input); Order order=findById(id);
-        order.setMemberId(input.getMemberId()); order.setProductId(input.getProductId()); order.setQuantity(input.getQuantity());
-        order.setUnitPrice(input.getUnitPrice()); order.setRecipientName(input.getRecipientName()); order.setRecipientPhone(input.getRecipientPhone());
-        order.setShippingAddress(input.getShippingAddress()); order.setPaymentMethod(input.getPaymentMethod()); order.setOrderStatus(input.getOrderStatus()); order.setNote(input.getNote());
-        calculateTotal(order); return orderRepository.save(order);
+    @Transactional public OrderResponse createOrder(OrderRequest request){
+        Member member=findMember(request.memberId()); Product product=findProduct(request.productId());
+        normalizeStatus(request.orderStatus(),"PENDING");
+        ensurePrice(product); deduct(product,request.quantity());
+        Order order=new Order(); apply(order,request,member,product); return toResponse(orders.save(order));
     }
-    public void delete(Long id){orderRepository.delete(findById(id));}
-    public List<Order> search(Long memberId, Long productId, String status){
-        List<Order> list=memberId!=null?orderRepository.findByMemberId(memberId):productId!=null?orderRepository.findByProductId(productId):hasText(status)?orderRepository.findByOrderStatus(status.trim()):findAll();
-        return list.stream().filter(o->memberId==null||memberId.equals(o.getMemberId())).filter(o->productId==null||productId.equals(o.getProductId())).filter(o->!hasText(status)||status.trim().equalsIgnoreCase(o.getOrderStatus())).toList();
+    @Transactional public OrderResponse updateOrder(Long id,OrderRequest request){
+        Order order=findOrder(id); Member member=findMember(request.memberId()); Product product=findProduct(request.productId());
+        boolean oldActive=!isCancelled(order.getOrderStatus()); boolean newActive=!isCancelled(normalizeStatus(request.orderStatus(),"PENDING"));
+        if(oldActive){restore(order.getProduct(),order.getQuantity());}
+        if(newActive){ensurePrice(product);deduct(product,request.quantity());}
+        apply(order,request,member,product); return toResponse(orders.save(order));
     }
-    private void validate(Order o){
-        if(!memberRepository.existsById(o.getMemberId())) throw new ResponseStatusException(HttpStatus.NOT_FOUND,"會員不存在");
-        if(!productRepository.existsById(o.getProductId())) throw new ResponseStatusException(HttpStatus.NOT_FOUND,"商品不存在");
-        if(o.getQuantity()==null||o.getQuantity()<1) throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"數量不可小於 1");
-        if(o.getUnitPrice()==null||o.getUnitPrice().compareTo(BigDecimal.ZERO)<0) throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"單價不可小於 0");
+    @Transactional public void deleteOrder(Long id){Order order=findOrder(id);if(!isCancelled(order.getOrderStatus()))restore(order.getProduct(),order.getQuantity());orders.delete(order);}
+
+    private void apply(Order order,OrderRequest r,Member m,Product p){
+        ensurePrice(p);order.setMember(m);order.setProduct(p);order.setQuantity(r.quantity());order.setUnitPrice(p.getPrice());order.setTotalAmount(p.getPrice().multiply(BigDecimal.valueOf(r.quantity())));
+        order.setOrderStatus(normalizeStatus(r.orderStatus(),"PENDING"));order.setRecipientName(r.recipientName());order.setRecipientPhone(r.recipientPhone());order.setShippingAddress(r.shippingAddress());order.setNote(r.note());
     }
-    private void calculateTotal(Order o){o.setTotalAmount(o.getUnitPrice().multiply(BigDecimal.valueOf(o.getQuantity())));}
-    private boolean hasText(String v){return v!=null&&!v.isBlank();}
+    private void deduct(Product p,int quantity){int stock=p.getStock()==null?0:p.getStock();if(stock<quantity)throw new ResponseStatusException(HttpStatus.CONFLICT,"商品庫存不足");p.setStock(stock-quantity);products.save(p);}
+    private void restore(Product p,int quantity){p.setStock((p.getStock()==null?0:p.getStock())+quantity);products.save(p);}
+    private void ensurePrice(Product p){if(p.getPrice()==null||p.getPrice().compareTo(BigDecimal.ZERO)<0)throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"商品價格不可為空或負數");}
+    private Order findOrder(Long id){return orders.findById(id).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND,"找不到訂單"));}
+    private Member findMember(Long id){return members.findById(id).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND,"找不到會員"));}
+    private Product findProduct(Long id){return products.findById(id).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND,"找不到商品"));}
+    private boolean contains(String value,String key){return value!=null&&value.toLowerCase(Locale.ROOT).contains(key);}
+    private boolean isCancelled(String status){return "CANCELLED".equalsIgnoreCase(status);}
+    private String normalizeStatus(String status,String fallback){String value=status==null||status.isBlank()?fallback:status.trim().toUpperCase(Locale.ROOT);if(!ORDER_STATUSES.contains(value))throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"不支援的訂單狀態");return value;}
+    private OrderResponse toResponse(Order o){return new OrderResponse(o.getId(),o.getMember().getId(),o.getMember().getName(),o.getProduct().getId(),o.getProduct().getProductName(),o.getQuantity(),o.getUnitPrice(),o.getTotalAmount(),o.getOrderStatus(),o.getRecipientName(),o.getRecipientPhone(),o.getShippingAddress(),o.getNote(),o.getCreatedAt(),o.getUpdatedAt());}
 }

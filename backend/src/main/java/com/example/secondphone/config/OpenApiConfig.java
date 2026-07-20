@@ -16,7 +16,7 @@ public class OpenApiConfig {
                         .title("Second Phone Platform API")
                         .version("1.0.0")
                         .description("二手手機販售與維修整合平台 REST API。"
-                                + "目前為課堂展示版本，密碼欄位尚未加密且可能出現在 API 回應；"
-                                + "正式版本應使用 BCrypt 並透過 DTO 隱藏 password。"));
+                                + "目前為課堂展示版本，密碼欄位尚未加密，但已設為 write-only，不會出現在 API 回應；"
+                                + "正式版本仍應使用 BCrypt 並透過專用 DTO 管理密碼。"));
     }
 }

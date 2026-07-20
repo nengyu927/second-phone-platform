@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import com.example.secondphone.entity.Member;
 import com.example.secondphone.service.MemberService;
@@ -25,7 +26,7 @@ import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/members")
-@Tag(name = "Member Management", description = "會員資料 CRUD。課堂展示版本的密碼尚未加密且可能出現在 API 回應。")
+@Tag(name = "Member Management", description = "會員資料 CRUD。password 為 write-only，不會出現在 API 回應。")
 public class MemberController {
 
     private final MemberService memberService;
@@ -35,10 +36,12 @@ public class MemberController {
     }
 
     @GetMapping
-    @Operation(summary = "查詢全部會員")
+    @Operation(summary = "查詢或搜尋會員", description = "可依帳號或姓名關鍵字搜尋；未提供關鍵字時回傳全部會員。")
     @ApiResponse(responseCode = "200", description = "查詢成功")
-    public ResponseEntity<List<Member>> findAll() {
-        return ResponseEntity.ok(memberService.findAll());
+    public ResponseEntity<List<Member>> findAll(
+            @Parameter(description = "會員帳號或姓名關鍵字")
+            @RequestParam(name = "keyword", required = false) String keyword) {
+        return ResponseEntity.ok(memberService.search(keyword));
     }
 
     @GetMapping("/{id}")
