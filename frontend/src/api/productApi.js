@@ -20,6 +20,14 @@ export async function deleteProduct(id) {
   await http.delete(`/products/${id}`)
 }
 
+export async function importProductsCsv(file, categoryId, brandId) {
+  const data = new FormData()
+  data.append('file', file)
+  data.append('categoryId', String(categoryId))
+  data.append('brandId', String(brandId))
+  return (await http.post('/admin/products/import-csv', data)).data
+}
+
 export async function getBrands(admin = false) {
   return (await http.get(admin ? '/admin/brands' : '/brands')).data
 }
