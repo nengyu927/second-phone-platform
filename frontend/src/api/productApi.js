@@ -28,6 +28,14 @@ export async function importProductsCsv(file, categoryId, brandId) {
   return (await http.post('/admin/products/import-csv', data)).data
 }
 
+export async function previewProductImageBackfill() {
+  return (await http.get('/admin/products/image-backfill/preview')).data
+}
+
+export async function applyProductImageBackfill(confirmedModels) {
+  return (await http.post('/admin/products/image-backfill/apply', { confirmedModels })).data
+}
+
 export async function getBrands(admin = false) {
   return (await http.get(admin ? '/admin/brands' : '/brands')).data
 }

@@ -6,5 +6,6 @@ import com.example.secondphone.entity.ProductImage;
 
 public interface ProductImageRepository extends JpaRepository<ProductImage, Long> {
     List<ProductImage> findByProductIdOrderBySortOrderAscIdAsc(Long productId);
+    boolean existsByProductId(Long productId);
     void deleteByProductId(Long productId);
 }
