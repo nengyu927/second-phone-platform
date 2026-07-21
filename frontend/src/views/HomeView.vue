@@ -1,43 +1,18 @@
 <script setup>
-import { ref } from 'vue'
-import http from '../api/http'
-
-const apiMessage = ref('尚未測試')
-const loading = ref(false)
-
-async function testApi() {
-  loading.value = true
-
-  try {
-    const response = await http.get('/test')
-    apiMessage.value = response.data.message
-  } catch (error) {
-    apiMessage.value = '無法連線後端，請確認 Spring Boot 是否啟動'
-  } finally {
-    loading.value = false
-  }
-}
+import { onMounted, ref } from 'vue'
+import { getBrands, getProducts } from '../api/productApi'
+import ProductCard from '../components/ProductCard.vue'
+const products = ref([]), brands = ref([]), loading = ref(true), error = ref('')
+onMounted(async () => {
+  try { const [productPage, brandList] = await Promise.all([getProducts({ featured: true, status: 'ACTIVE', size: 4 }), getBrands()]); products.value = productPage.content || []; brands.value = brandList.slice(0, 8) }
+  catch (e) { error.value = e.message } finally { loading.value = false }
+})
 </script>
-
-<template>
-  <section>
-    <h2>期中專題簡化試作版</h2>
-    <p>目前已完成 Vue、Axios、Router 與 Spring Boot API 基礎架構。</p>
-
-    <div class="card">
-      <h3>前後端連線測試</h3>
-      <p>{{ apiMessage }}</p>
-      <button @click="testApi" :disabled="loading">
-        {{ loading ? '測試中...' : '測試 API' }}
-      </button>
-    </div>
-
-    <div class="feature-grid">
-      <article class="card"><h3>會員</h3><p>註冊、會員資料 CRUD</p></article>
-      <article class="card"><h3>商品</h3><p>二手手機商品 CRUD</p></article>
-      <article class="card"><h3>訂單</h3><p>訂單與訂單明細</p></article>
-      <article class="card"><h3>維修</h3><p>維修單與進度管理</p></article>
-      <article class="card"><h3>後台</h3><p>集中管理五大功能</p></article>
-    </div>
-  </section>
-</template>
+<template><div class="home-page">
+  <section class="hero"><div class="hero-content container-wide"><div><p class="eyebrow">TRUSTED SECOND-HAND TECHNOLOGY</p><h1>安心選購二手手機，<br><span>讓科技延續價值。</span></h1><p>一站完成購買、維修與舊機收購。清楚檢測、透明價格、完整售後，買得更安心。</p><form class="hero-search" action="/products"><input name="keyword" aria-label="搜尋商品" placeholder="搜尋品牌、型號或商品名稱"><button class="button button-primary">搜尋商品</button></form><div class="hero-actions"><RouterLink class="button button-light" to="/products">探索二手機</RouterLink><RouterLink class="text-link" to="/trade-in">立即估價舊機 →</RouterLink></div></div><div class="hero-visual" aria-hidden="true"><div class="phone-shape"><span>Second</span></div><div class="trust-card"><strong>40+</strong><span>項專業檢測</span></div><div class="warranty-card"><strong>安心保障</strong><span>透明機況與售後</span></div></div></div></section>
+  <section class="section container-wide"><div class="section-heading"><div><p class="eyebrow">FEATURED DEVICES</p><h2>精選二手手機</h2><p>依機況、庫存與價格透明呈現，每一支都值得信賴。</p></div><RouterLink class="text-link" to="/products">查看全部商品 →</RouterLink></div><p v-if="error" class="alert error">{{ error }}</p><div v-if="loading" class="product-grid"><div v-for="n in 4" :key="n" class="skeleton product-skeleton"></div></div><div v-else-if="products.length" class="product-grid"><ProductCard v-for="product in products" :key="product.id" :product="product" /></div><div v-else class="empty-inline">目前尚無精選商品，管理員可於後台設定精選商品。</div></section>
+  <section class="brand-strip"><div class="container-wide"><p class="eyebrow">POPULAR BRANDS</p><div class="brand-list"><span v-for="brand in brands" :key="brand.id">{{ brand.name }}</span><template v-if="!brands.length"><span>Apple</span><span>Samsung</span><span>Google</span><span>ASUS</span></template></div></div></section>
+  <section class="section container-wide"><div class="section-heading centered"><div><p class="eyebrow">ONE PLATFORM, COMPLETE SERVICE</p><h2>從選購到售後，服務一次到位</h2></div></div><div class="service-grid"><article><span>01</span><h3>嚴選二手機</h3><p>清楚揭露外觀、功能與庫存資訊，價格透明不模糊。</p><RouterLink to="/products">瀏覽商品 →</RouterLink></article><article><span>02</span><h3>專業維修</h3><p>線上提出維修需求，後續可於會員中心掌握案件進度。</p><RouterLink to="/repairs">申請維修 →</RouterLink></article><article><span>03</span><h3>舊機收購</h3><p>提供規格與機況，建立透明且可追蹤的估價流程。</p><RouterLink to="/trade-in">開始估價 →</RouterLink></article></div></section>
+  <section class="process-section"><div class="container-wide"><div class="section-heading"><div><p class="eyebrow">HOW IT WORKS</p><h2>簡單四步，安心入手</h2></div></div><ol class="process-list"><li><b>01</b><div><h3>搜尋比較</h3><p>依品牌、機況與預算找到適合商品。</p></div></li><li><b>02</b><div><h3>查看檢測</h3><p>確認商品規格、照片與可售庫存。</p></div></li><li><b>03</b><div><h3>安全結帳</h3><p>加入購物車並完成展示用模擬付款流程。</p></div></li><li><b>04</b><div><h3>安心售後</h3><p>會員中心集中追蹤訂單、維修與收購紀錄。</p></div></li></ol></div></section>
+  <section class="guarantee-section container-wide"><div><p class="eyebrow">OUR PROMISE</p><h2>品質看得見，售後找得到</h2><p>平台以一致的機況分級、庫存紀錄與會員身分驗證，建立可信任的交易流程。</p></div><ul><li>✓ 商品資訊透明</li><li>✓ 庫存異動可追蹤</li><li>✓ 會員資料受保護</li><li>✓ 完整服務歷程</li></ul></section>
+</div></template>

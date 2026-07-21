@@ -1,18 +1,32 @@
-# VS Code
-.vscode/
+# VS Code / IntelliJ
+.vscode/*.local.json
+.vscode/settings.local.json
+.idea/
 *.code-workspace
 
 # Java
 backend/target/
+backend/data/
+target/
 *.class
 
 # Node
 frontend/node_modules/
 frontend/dist/
+node_modules/
+dist/
+frontend/pnpm-lock.yaml
+frontend/pnpm-workspace.yaml
 
 # Environment
 .env
 .env.*
+!.env.example
+backend/src/main/resources/application-local.properties
+uploads/
+*.log
+error-log.txt
+**/error-log.txt
 
 # OS
 .DS_Store

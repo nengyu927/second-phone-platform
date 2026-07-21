@@ -1,0 +1,6 @@
+<script setup>
+import { reactive, ref } from 'vue'; import { useRoute, useRouter } from 'vue-router'; import { useAuthStore } from '../stores/auth'
+const auth=useAuthStore(),route=useRoute(),router=useRouter(),form=reactive({account:'',password:''}),loading=ref(false),error=ref('')
+async function submit(){loading.value=true;error.value='';try{const user=await auth.login(form);const target=typeof route.query.redirect==='string'?route.query.redirect:(['ADMIN','STAFF'].includes(user.role)?'/admin':'/member');router.replace(target)}catch(e){error.value=e.message}finally{loading.value=false}}
+</script>
+<template><section class="auth-card card"><p class="eyebrow">WELCOME BACK</p><h1>登入平台</h1><p>使用帳號或電子信箱登入，繼續管理您的服務紀錄。</p><p v-if="error" class="alert error">{{error}}</p><form @submit.prevent="submit"><label>帳號或電子信箱<input v-model.trim="form.account" required autocomplete="username" placeholder="name@example.com"></label><label>密碼<input v-model="form.password" type="password" required autocomplete="current-password" placeholder="請輸入密碼"></label><button class="button button-primary button-full" :disabled="loading">{{loading?'登入中…':'登入'}}</button></form><p>尚未加入？ <RouterLink class="text-link" to="/register">建立會員帳號</RouterLink></p></section></template>

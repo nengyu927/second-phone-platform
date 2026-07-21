@@ -1,0 +1,4 @@
+package com.example.secondphone.controller;
+import java.util.List;import org.springframework.web.bind.annotation.*;import com.example.secondphone.dto.*;import com.example.secondphone.service.TradeInService;import io.swagger.v3.oas.annotations.tags.Tag;import jakarta.validation.Valid;
+@RestController @RequestMapping("/api/admin/trade-ins") @Tag(name="後台收購",description="後台估價與收購進度管理")
+public class AdminTradeInController{private final TradeInService service;public AdminTradeInController(TradeInService service){this.service=service;}@GetMapping public List<TradeInResponse> list(){return service.adminList();}@GetMapping("/{id}") public TradeInResponse detail(@PathVariable Long id){return service.adminDetail(id);}@PatchMapping("/{id}") public TradeInResponse update(@PathVariable Long id,@Valid @RequestBody TradeInAdminUpdateRequest q){return service.adminUpdate(id,q);}}

@@ -1,0 +1,7 @@
+<script setup>
+import {onMounted,reactive,ref} from 'vue';import {getProfile,updateProfile} from '../api/authApi';import {useAuthStore} from '../stores/auth'
+const auth=useAuthStore(),form=reactive({username:'',email:'',name:'',phone:''}),loading=ref(false),error=ref(''),success=ref('')
+onMounted(async()=>{try{Object.assign(form,await getProfile())}catch(e){error.value=e.message}})
+async function submit(){loading.value=true;error.value='';success.value='';try{const user=await updateProfile({name:form.name,phone:form.phone});Object.assign(form,user);auth.setCurrentUser(user);success.value='個人資料已更新。'}catch(e){error.value=e.message}finally{loading.value=false}}
+</script>
+<template><section><div class="page-heading"><div><p class="eyebrow">ACCOUNT PROFILE</p><h1>個人資料</h1><p>帳號與電子信箱目前為唯讀，您可以更新姓名與手機。</p></div><span class="badge badge-success">{{auth.currentUser?.status}}</span></div><p v-if="error" class="alert error">{{error}}</p><p v-if="success" class="alert success">{{success}}</p><form class="card form-grid" @submit.prevent="submit"><label>使用者名稱<input v-model="form.username" disabled></label><label>電子信箱<input v-model="form.email" disabled></label><label>姓名<input v-model.trim="form.name" required maxlength="100"></label><label>手機<input v-model.trim="form.phone" maxlength="20"></label><div class="full-width"><button class="button button-primary" :disabled="loading">{{loading?'儲存中…':'儲存修改'}}</button></div></form></section></template>

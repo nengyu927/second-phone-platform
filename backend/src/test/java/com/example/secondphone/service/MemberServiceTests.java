@@ -95,7 +95,7 @@ class MemberServiceTests {
         assertEquals("new@example.com", updated.getEmail());
         assertEquals("0912345678", updated.getPhone());
         assertEquals("ADMIN", updated.getRole());
-        assertEquals("INACTIVE", updated.getStatus());
+        assertEquals("DISABLED", updated.getStatus());
     }
 
     @Test

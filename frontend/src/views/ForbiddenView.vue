@@ -1,0 +1,1 @@
+<template><section class="empty-state card"><span class="empty-icon">!</span><p class="eyebrow">ACCESS DENIED</p><h1>沒有存取權限</h1><p>目前登入的帳號沒有進入此功能的權限。</p><RouterLink class="button button-primary" to="/">返回首頁</RouterLink></section></template>

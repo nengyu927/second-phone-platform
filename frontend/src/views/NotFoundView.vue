@@ -1,0 +1,1 @@
+<template><section class="empty-state card"><span class="empty-icon">404</span><p class="eyebrow">PAGE NOT FOUND</p><h1>找不到這個頁面</h1><p>網址可能已變更，或頁面尚未建立。</p><RouterLink class="button button-primary" to="/">返回首頁</RouterLink></section></template>

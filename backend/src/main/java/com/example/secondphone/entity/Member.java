@@ -1,11 +1,11 @@
 package com.example.secondphone.entity;
 
 import java.time.LocalDateTime;
-
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.Convert;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -27,7 +27,6 @@ public class Member {
     @Column(nullable = false, unique = true, length = 50)
     private String account;
 
-    @NotBlank
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @Column(nullable = false, length = 255)
     private String password;
@@ -37,17 +36,19 @@ public class Member {
     private String name;
 
     @Email
-    @Column(length = 100)
+    @Column(unique = true, length = 100)
     private String email;
 
     @Column(length = 20)
     private String phone;
 
+    @Convert(converter = MemberRoleConverter.class)
     @Column(nullable = false, length = 20)
-    private String role;
+    private MemberRole role;
 
+    @Convert(converter = MemberStatusConverter.class)
     @Column(nullable = false, length = 20)
-    private String status;
+    private MemberStatus status;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -58,11 +59,11 @@ public class Member {
     @PrePersist
     public void prePersist() {
         LocalDateTime now = LocalDateTime.now();
-        if (role == null || role.isBlank()) {
-            role = "USER";
+        if (role == null) {
+            role = MemberRole.CUSTOMER;
         }
-        if (status == null || status.isBlank()) {
-            status = "ACTIVE";
+        if (status == null) {
+            status = MemberStatus.ACTIVE;
         }
         createdAt = now;
         updatedAt = now;
@@ -122,19 +123,35 @@ public class Member {
     }
 
     public String getRole() {
-        return role;
+        return role == null ? null : role.name();
     }
 
-    public void setRole(String role) {
+    public MemberRole getRoleEnum() { return role; }
+
+    public void setRole(MemberRole role) {
         this.role = role;
     }
 
+    public void setRole(String role) {
+        this.role = "USER".equalsIgnoreCase(role)
+                ? MemberRole.CUSTOMER
+                : MemberRole.valueOf(role.toUpperCase());
+    }
+
     public String getStatus() {
-        return status;
+        return status == null ? null : status.name();
+    }
+
+    public MemberStatus getStatusEnum() { return status; }
+
+    public void setStatus(MemberStatus status) {
+        this.status = status;
     }
 
     public void setStatus(String status) {
-        this.status = status;
+        this.status = "INACTIVE".equalsIgnoreCase(status)
+                ? MemberStatus.DISABLED
+                : MemberStatus.valueOf(status.toUpperCase());
     }
 
     public LocalDateTime getCreatedAt() {

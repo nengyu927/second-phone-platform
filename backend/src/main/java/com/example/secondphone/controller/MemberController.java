@@ -11,22 +11,20 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.access.prepost.PreAuthorize;
 
+import com.example.secondphone.dto.AdminMemberRequest;
+import com.example.secondphone.dto.MemberResponse;
 import com.example.secondphone.entity.Member;
+import com.example.secondphone.exception.BusinessException;
 import com.example.secondphone.service.MemberService;
 
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/members")
-@Tag(name = "Member Management", description = "會員資料 CRUD。password 為 write-only，不會出現在 API 回應。")
 public class MemberController {
 
     private final MemberService memberService;
@@ -36,60 +34,57 @@ public class MemberController {
     }
 
     @GetMapping
-    @Operation(summary = "查詢或搜尋會員", description = "可依帳號或姓名關鍵字搜尋；未提供關鍵字時回傳全部會員。")
-    @ApiResponse(responseCode = "200", description = "查詢成功")
-    public ResponseEntity<List<Member>> findAll(
-            @Parameter(description = "會員帳號或姓名關鍵字")
+    ResponseEntity<List<MemberResponse>> findAll(
             @RequestParam(name = "keyword", required = false) String keyword) {
-        return ResponseEntity.ok(memberService.search(keyword));
+        return ResponseEntity.ok(memberService.search(keyword).stream().map(MemberResponse::from).toList());
     }
 
     @GetMapping("/{id}")
-    @Operation(summary = "查詢單一會員")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "查詢成功"),
-            @ApiResponse(responseCode = "404", description = "會員不存在")
-    })
-    public ResponseEntity<Member> findById(
-            @Parameter(description = "會員 ID", example = "1") @PathVariable Long id) {
-        return ResponseEntity.ok(memberService.findById(id));
+    ResponseEntity<MemberResponse> findById(@PathVariable Long id) {
+        return ResponseEntity.ok(MemberResponse.from(memberService.findById(id)));
     }
 
     @PostMapping
-    @Operation(summary = "新增會員")
-    @ApiResponses({
-            @ApiResponse(responseCode = "201", description = "新增成功"),
-            @ApiResponse(responseCode = "400", description = "輸入資料驗證失敗"),
-            @ApiResponse(responseCode = "409", description = "帳號已存在")
-    })
-    public ResponseEntity<Member> create(@Valid @RequestBody Member member) {
-        Member createdMember = memberService.create(member);
-        return ResponseEntity.created(URI.create("/api/members/" + createdMember.getId())).body(createdMember);
+    @PreAuthorize("hasRole('ADMIN')")
+    ResponseEntity<MemberResponse> create(@Valid @RequestBody AdminMemberRequest request) {
+        if (request.password() == null || request.password().isBlank()) {
+            throw new BusinessException("新增會員時必須設定密碼");
+        }
+        Member created = memberService.create(toMember(request));
+        return ResponseEntity.created(URI.create("/api/members/" + created.getId()))
+                .body(MemberResponse.from(created));
     }
 
     @PutMapping("/{id}")
-    @Operation(summary = "修改會員")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "修改成功"),
-            @ApiResponse(responseCode = "400", description = "輸入資料驗證失敗"),
-            @ApiResponse(responseCode = "404", description = "會員不存在"),
-            @ApiResponse(responseCode = "409", description = "帳號已被其他會員使用")
-    })
-    public ResponseEntity<Member> update(
-            @Parameter(description = "會員 ID", example = "1") @PathVariable Long id,
-            @Valid @RequestBody Member member) {
-        return ResponseEntity.ok(memberService.update(id, member));
+    @PreAuthorize("hasRole('ADMIN')")
+    ResponseEntity<MemberResponse> update(
+            @PathVariable Long id,
+            @Valid @RequestBody AdminMemberRequest request) {
+        return ResponseEntity.ok(MemberResponse.from(memberService.update(id, toMember(request))));
     }
 
     @DeleteMapping("/{id}")
-    @Operation(summary = "刪除會員")
-    @ApiResponses({
-            @ApiResponse(responseCode = "204", description = "刪除成功"),
-            @ApiResponse(responseCode = "404", description = "會員不存在")
-    })
-    public ResponseEntity<Void> delete(
-            @Parameter(description = "會員 ID", example = "1") @PathVariable Long id) {
+    ResponseEntity<Void> delete(@PathVariable Long id) {
         memberService.delete(id);
         return ResponseEntity.noContent().build();
+    }
+
+    private Member toMember(AdminMemberRequest request) {
+        Member member = new Member();
+        member.setAccount(request.username().trim());
+        member.setPassword(request.password());
+        member.setName(request.name().trim());
+        member.setEmail(normalizeNullable(request.email()));
+        member.setPhone(normalizeNullable(request.phone()));
+        member.setRole(request.role());
+        member.setStatus(request.status());
+        return member;
+    }
+
+    private String normalizeNullable(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return value.trim();
     }
 }

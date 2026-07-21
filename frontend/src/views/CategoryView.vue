@@ -1,0 +1,11 @@
+<script setup>
+import { onMounted, reactive, ref } from 'vue'
+import { createCategory, getCategories, updateCategory } from '../api/productApi'
+const items=ref([]),loading=ref(false),saving=ref(false),error=ref(''),success=ref(''),editingId=ref(null),form=reactive({name:'',active:true})
+async function load(){loading.value=true;try{items.value=await getCategories(true)}catch(e){error.value=e.message}finally{loading.value=false}}
+function edit(item){editingId.value=item.id;form.name=item.name;form.active=item.active}
+function reset(){editingId.value=null;form.name='';form.active=true}
+async function submit(){saving.value=true;error.value='';success.value='';try{if(editingId.value)await updateCategory(editingId.value,form);else await createCategory(form);success.value=editingId.value?'分類已更新。':'分類已新增。';reset();await load()}catch(e){error.value=e.message}finally{saving.value=false}}
+onMounted(load)
+</script>
+<template><section><div class="page-heading"><div><p class="eyebrow">CATALOG SETTINGS</p><h1>分類管理</h1><p>建立一致的商品分類，提供前台快速篩選。</p></div></div><p v-if="error" class="alert error">{{error}}</p><p v-if="success" class="alert success">{{success}}</p><div class="split-grid"><form class="card form-card" @submit.prevent="submit"><h2>{{editingId?'編輯分類':'新增分類'}}</h2><label>分類名稱 *<input v-model.trim="form.name" required maxlength="80"></label><label class="check-label"><input v-model="form.active" type="checkbox"> 啟用分類</label><div class="form-actions"><button class="button button-primary" :disabled="saving">{{saving?'儲存中…':'儲存分類'}}</button><button v-if="editingId" type="button" class="button button-ghost" @click="reset">取消</button></div></form><div class="card"><div class="card-header"><h2>分類清單</h2><span class="badge">{{items.length}} 筆</span></div><div v-if="loading" class="loading-row">載入中…</div><div v-else class="table-scroll"><table><thead><tr><th>分類</th><th>Slug</th><th>狀態</th><th>操作</th></tr></thead><tbody><tr v-for="item in items" :key="item.id"><td><b>{{item.name}}</b></td><td><code>{{item.slug}}</code></td><td><span :class="['badge',item.active?'badge-success':'']">{{item.active?'啟用':'停用'}}</span></td><td><button class="button button-ghost button-small" @click="edit(item)">編輯</button></td></tr></tbody></table></div></div></div></section></template>

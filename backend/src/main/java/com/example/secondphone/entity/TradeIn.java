@@ -1,0 +1,18 @@
+package com.example.secondphone.entity;
+import java.math.BigDecimal;import java.time.LocalDateTime;import jakarta.persistence.*;
+@Entity @Table(name="trade_ins")
+public class TradeIn{
+ @Id @GeneratedValue(strategy=GenerationType.IDENTITY) private Long id;
+ @Column(name="trade_in_number",unique=true,length=40) private String tradeInNumber;
+ @ManyToOne(optional=false,fetch=FetchType.LAZY) @JoinColumn(name="member_id",nullable=false) private Member member;
+ @Column(name="customer_name",nullable=false,length=100) private String customerName;
+ @Column(name="customer_phone",nullable=false,length=30) private String customerPhone;
+ @Column(nullable=false,length=60) private String brand;@Column(nullable=false,length=120) private String model;
+ @Column(name="storage_capacity",length=40) private String storageCapacity;@Column(length=40) private String color;@Column(length=30) private String imei;
+ @Column(name="appearance_condition",nullable=false,length=40) private String appearanceCondition;@Column(name="function_condition",nullable=false,length=40) private String functionCondition;
+ @Column(columnDefinition="TEXT") private String description;@Column(name="expected_price",precision=12,scale=2) private BigDecimal expectedPrice;@Column(name="quoted_price",precision=12,scale=2) private BigDecimal quotedPrice;
+ @Column(nullable=false,length=30) private String status=TradeInStatus.SUBMITTED.name();@Column(name="rejection_reason",columnDefinition="TEXT") private String rejectionReason;
+ @Column(name="created_at",nullable=false,updatable=false) private LocalDateTime createdAt;@Column(name="updated_at",nullable=false) private LocalDateTime updatedAt;
+ @PrePersist void pre(){var now=LocalDateTime.now();if(status==null)status=TradeInStatus.SUBMITTED.name();createdAt=now;updatedAt=now;}@PreUpdate void update(){updatedAt=LocalDateTime.now();}
+ public Long getId(){return id;}public String getTradeInNumber(){return tradeInNumber;}public void setTradeInNumber(String v){tradeInNumber=v;}public Member getMember(){return member;}public void setMember(Member v){member=v;}public String getCustomerName(){return customerName;}public void setCustomerName(String v){customerName=v;}public String getCustomerPhone(){return customerPhone;}public void setCustomerPhone(String v){customerPhone=v;}public String getBrand(){return brand;}public void setBrand(String v){brand=v;}public String getModel(){return model;}public void setModel(String v){model=v;}public String getStorageCapacity(){return storageCapacity;}public void setStorageCapacity(String v){storageCapacity=v;}public String getColor(){return color;}public void setColor(String v){color=v;}public String getImei(){return imei;}public void setImei(String v){imei=v;}public String getAppearanceCondition(){return appearanceCondition;}public void setAppearanceCondition(String v){appearanceCondition=v;}public String getFunctionCondition(){return functionCondition;}public void setFunctionCondition(String v){functionCondition=v;}public String getDescription(){return description;}public void setDescription(String v){description=v;}public BigDecimal getExpectedPrice(){return expectedPrice;}public void setExpectedPrice(BigDecimal v){expectedPrice=v;}public BigDecimal getQuotedPrice(){return quotedPrice;}public void setQuotedPrice(BigDecimal v){quotedPrice=v;}public String getStatus(){return status;}public void setStatus(String v){status=v;}public String getRejectionReason(){return rejectionReason;}public void setRejectionReason(String v){rejectionReason=v;}public LocalDateTime getCreatedAt(){return createdAt;}public LocalDateTime getUpdatedAt(){return updatedAt;}
+}

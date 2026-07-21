@@ -1,0 +1,11 @@
+<script setup>
+import { onMounted, reactive, ref } from 'vue'
+import { createBrand, getBrands, updateBrand } from '../api/productApi'
+const items=ref([]),loading=ref(false),saving=ref(false),error=ref(''),success=ref(''),editingId=ref(null),form=reactive({name:'',active:true})
+async function load(){loading.value=true;try{items.value=await getBrands(true)}catch(e){error.value=e.message}finally{loading.value=false}}
+function edit(item){editingId.value=item.id;form.name=item.name;form.active=item.active}
+function reset(){editingId.value=null;form.name='';form.active=true}
+async function submit(){saving.value=true;error.value='';success.value='';try{if(editingId.value)await updateBrand(editingId.value,form);else await createBrand(form);success.value=editingId.value?'品牌已更新。':'品牌已新增。';reset();await load()}catch(e){error.value=e.message}finally{saving.value=false}}
+onMounted(load)
+</script>
+<template><section><div class="page-heading"><div><p class="eyebrow">CATALOG SETTINGS</p><h1>品牌管理</h1><p>維護商品品牌，停用後不會出現在前台篩選。</p></div></div><p v-if="error" class="alert error">{{error}}</p><p v-if="success" class="alert success">{{success}}</p><div class="split-grid"><form class="card form-card" @submit.prevent="submit"><h2>{{editingId?'編輯品牌':'新增品牌'}}</h2><label>品牌名稱 *<input v-model.trim="form.name" required maxlength="80"></label><label class="check-label"><input v-model="form.active" type="checkbox"> 啟用品牌</label><div class="form-actions"><button class="button button-primary" :disabled="saving">{{saving?'儲存中…':'儲存品牌'}}</button><button v-if="editingId" type="button" class="button button-ghost" @click="reset">取消</button></div></form><div class="card"><div class="card-header"><h2>品牌清單</h2><span class="badge">{{items.length}} 筆</span></div><div v-if="loading" class="loading-row">載入中…</div><div v-else class="table-scroll"><table><thead><tr><th>品牌</th><th>Slug</th><th>狀態</th><th>操作</th></tr></thead><tbody><tr v-for="item in items" :key="item.id"><td><b>{{item.name}}</b></td><td><code>{{item.slug}}</code></td><td><span :class="['badge',item.active?'badge-success':'']">{{item.active?'啟用':'停用'}}</span></td><td><button class="button button-ghost button-small" @click="edit(item)">編輯</button></td></tr></tbody></table></div></div></div></section></template>

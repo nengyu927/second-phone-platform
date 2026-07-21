@@ -1,6 +1,10 @@
 import http from './http'
-export async function getOrders(params={}){return (await http.get('/orders',{params})).data}
-export async function getOrderById(id){return (await http.get(`/orders/${id}`)).data}
-export async function createOrder(order){return (await http.post('/orders',order)).data}
-export async function updateOrder(id,order){return (await http.put(`/orders/${id}`,order)).data}
-export async function deleteOrder(id){await http.delete(`/orders/${id}`)}
+export async function checkout(payload){return (await http.post('/orders',payload)).data}
+export async function getMyOrders(){return (await http.get('/orders')).data}
+export async function getMyOrder(id){return (await http.get(`/orders/${id}`)).data}
+export async function cancelMyOrder(id){return (await http.post(`/orders/${id}/cancel`)).data}
+export async function getAdminOrders(params={}){return (await http.get('/admin/orders',{params})).data}
+export async function getAdminOrder(id){return (await http.get(`/admin/orders/${id}`)).data}
+export async function updateAdminOrderStatus(id,status){return (await http.patch(`/admin/orders/${id}/status`,{status})).data}
+export async function updateAdminPaymentStatus(id,status){return (await http.patch(`/admin/orders/${id}/payment-status`,{status})).data}
+export async function updateAdminShippingStatus(id,status){return (await http.patch(`/admin/orders/${id}/shipping-status`,{status})).data}

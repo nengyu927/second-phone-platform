@@ -1,94 +1,40 @@
 package com.example.secondphone.controller;
 
+import java.math.BigDecimal;
 import java.net.URI;
-import java.util.List;
-
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
-
-import com.example.secondphone.entity.Product;
-import com.example.secondphone.service.ProductService;
-
+import org.springframework.web.bind.annotation.*;
+import com.example.secondphone.dto.*;
+import com.example.secondphone.service.ProductCatalogService;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/products")
-@Tag(name = "Product Management", description = "二手手機商品 CRUD 與搜尋")
+@Tag(name = "商品", description = "公開商品查詢與後台商品管理")
 public class ProductController {
+    private final ProductCatalogService service;
+    public ProductController(ProductCatalogService service) { this.service = service; }
 
-    private final ProductService productService;
-
-    public ProductController(ProductService productService) {
-        this.productService = productService;
+    @GetMapping @Operation(summary = "分頁查詢商品")
+    public PagedResponse<ProductResponse> search(@RequestParam(required = false) String keyword,
+            @RequestParam(required = false) Long brandId, @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) String condition, @RequestParam(required = false) String status,
+            @RequestParam(required = false) BigDecimal minPrice, @RequestParam(required = false) BigDecimal maxPrice,
+            @RequestParam(required = false) Boolean inStock, @RequestParam(required = false) Boolean featured,
+            @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "12") int size,
+            @RequestParam(defaultValue = "createdAt") String sort, @RequestParam(defaultValue = "desc") String direction) {
+        return service.search(keyword, brandId, categoryId, condition, status, minPrice, maxPrice, inStock, featured, page, size, sort, direction);
     }
-
-    @GetMapping
-    @Operation(summary = "查詢或搜尋商品列表", description = "多個搜尋條件使用 AND 邏輯；未提供條件時回傳全部商品。")
-    @ApiResponse(responseCode = "200", description = "查詢成功")
-    public ResponseEntity<List<Product>> findAll(
-            @Parameter(description = "商品名稱關鍵字") @RequestParam(required = false) String keyword,
-            @Parameter(description = "品牌關鍵字") @RequestParam(required = false) String brand,
-            @Parameter(description = "商品狀態") @RequestParam(required = false) String status) {
-        return ResponseEntity.ok(productService.search(keyword, brand, status));
+    @GetMapping("/{id}") @Operation(summary = "查詢商品詳情")
+    public ProductResponse findById(@PathVariable Long id) { return service.findResponse(id); }
+    @PostMapping @Operation(summary = "新增商品")
+    public ResponseEntity<ProductResponse> create(@Valid @RequestBody ProductRequest request) {
+        ProductResponse created = service.create(request); return ResponseEntity.created(URI.create("/api/products/" + created.id())).body(created);
     }
-
-    @GetMapping("/{id}")
-    @Operation(summary = "查詢單一商品")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "查詢成功"),
-            @ApiResponse(responseCode = "404", description = "商品不存在")
-    })
-    public ResponseEntity<Product> findById(
-            @Parameter(description = "商品 ID", example = "1") @PathVariable Long id) {
-        return ResponseEntity.ok(productService.findById(id));
-    }
-
-    @PostMapping
-    @Operation(summary = "新增商品")
-    @ApiResponses({
-            @ApiResponse(responseCode = "201", description = "新增成功"),
-            @ApiResponse(responseCode = "400", description = "輸入資料驗證失敗")
-    })
-    public ResponseEntity<Product> create(@Valid @RequestBody Product product) {
-        Product createdProduct = productService.create(product);
-        return ResponseEntity.created(URI.create("/api/products/" + createdProduct.getId())).body(createdProduct);
-    }
-
-    @PutMapping("/{id}")
-    @Operation(summary = "修改商品")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "修改成功"),
-            @ApiResponse(responseCode = "400", description = "輸入資料驗證失敗"),
-            @ApiResponse(responseCode = "404", description = "商品不存在")
-    })
-    public ResponseEntity<Product> update(
-            @Parameter(description = "商品 ID", example = "1") @PathVariable Long id,
-            @Valid @RequestBody Product product) {
-        return ResponseEntity.ok(productService.update(id, product));
-    }
-
-    @DeleteMapping("/{id}")
-    @Operation(summary = "刪除商品")
-    @ApiResponses({
-            @ApiResponse(responseCode = "204", description = "刪除成功"),
-            @ApiResponse(responseCode = "404", description = "商品不存在")
-    })
-    public ResponseEntity<Void> delete(
-            @Parameter(description = "商品 ID", example = "1") @PathVariable Long id) {
-        productService.delete(id);
-        return ResponseEntity.noContent().build();
-    }
+    @PutMapping("/{id}") @Operation(summary = "修改商品")
+    public ProductResponse update(@PathVariable Long id, @Valid @RequestBody ProductRequest request) { return service.update(id, request); }
+    @DeleteMapping("/{id}") @Operation(summary = "刪除商品")
+    public ResponseEntity<Void> delete(@PathVariable Long id) { service.delete(id); return ResponseEntity.noContent().build(); }
 }

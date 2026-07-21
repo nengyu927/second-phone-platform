@@ -1,26 +1,31 @@
 <script setup>
 import { onMounted, reactive, ref } from 'vue'
-import { createMember, deleteMember, getMembers, updateMember } from '../api/memberApi'
+import { createMember, deleteMember, getAdminMembers, updateMember, updateMemberRole, updateMemberStatus } from '../api/memberApi'
+import { useAuthStore } from '../stores/auth'
+import ConfirmModal from '../components/ConfirmModal.vue'
 
+const auth = useAuthStore()
 const members = ref([])
 const loading = ref(false)
 const saving = ref(false)
 const errorMessage = ref('')
 const editingId = ref(null)
 const keyword = ref('')
+const pendingDelete = ref(null)
+const actionMessage = ref('')
 
 const emptyForm = () => ({
-  account: '', password: '', name: '', email: '', phone: '', role: 'USER', status: 'ACTIVE'
+  account: '', password: '', name: '', email: '', phone: '', role: 'CUSTOMER', status: 'ACTIVE'
 })
 const form = reactive(emptyForm())
-const roleLabels = { USER: '一般會員', ADMIN: '管理員' }
+const roleLabels = { CUSTOMER: '一般會員', STAFF: '員工', ADMIN: '管理員' }
 const statusLabels = { ACTIVE: '啟用', DISABLED: '停用' }
 
 async function loadMembers() {
   loading.value = true
   errorMessage.value = ''
   try {
-    members.value = await getMembers(keyword.value ? { keyword: keyword.value } : {})
+    members.value = await getAdminMembers(keyword.value ? { keyword: keyword.value } : {})
   } catch (error) {
     errorMessage.value = error.message
   } finally {
@@ -31,12 +36,12 @@ async function loadMembers() {
 function editMember(member) {
   editingId.value = member.id
   Object.assign(form, {
-    account: member.account,
+    account: member.username,
     password: member.password || '',
     name: member.name,
     email: member.email || '',
     phone: member.phone || '',
-    role: member.role || 'USER',
+    role: member.role || 'CUSTOMER',
     status: member.status || 'ACTIVE'
   })
   window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -67,7 +72,6 @@ async function submitForm() {
 }
 
 async function removeMember(member) {
-  if (!window.confirm(`確定刪除會員「${member.name}」？`)) return
   errorMessage.value = ''
   try {
     await deleteMember(member.id)
@@ -76,6 +80,19 @@ async function removeMember(member) {
   } catch (error) {
     errorMessage.value = error.message
   }
+}
+
+async function toggleStatus(member) {
+  errorMessage.value = ''; actionMessage.value = ''
+  try { await updateMemberStatus(member.id, member.status === 'ACTIVE' ? 'DISABLED' : 'ACTIVE'); actionMessage.value = '會員狀態已更新。'; await loadMembers() }
+  catch (error) { errorMessage.value = error.message }
+}
+
+async function changeRole(member, role) {
+  if (role === member.role) return
+  errorMessage.value = ''; actionMessage.value = ''
+  try { await updateMemberRole(member.id, role); actionMessage.value = '會員角色已更新。'; await loadMembers() }
+  catch (error) { errorMessage.value = error.message; await loadMembers() }
 }
 
 function formatDate(value) {
@@ -97,17 +114,18 @@ onMounted(loadMembers)
       <button class="secondary" type="button" @click="loadMembers" :disabled="loading">重新整理</button>
     </div>
 
-    <p v-if="errorMessage" class="alert error">{{ errorMessage }}</p>
+    <p v-if="errorMessage" class="alert alert-error">{{ errorMessage }}</p>
+    <p v-if="actionMessage" class="alert alert-success">{{ actionMessage }}</p>
 
-    <form class="card" @submit.prevent="submitForm">
+    <form v-if="auth.isAdmin" class="card service-form" @submit.prevent="submitForm">
       <h3>{{ editingId ? `編輯會員 #${editingId}` : '新增會員' }}</h3>
       <div class="form-grid">
         <label>帳號 *<input v-model.trim="form.account" maxlength="50" required /></label>
-        <label>密碼 *<input v-model="form.password" type="password" maxlength="255" required autocomplete="new-password" /></label>
+        <label>密碼{{ editingId ? '（留空則不變）' : ' *' }}<input v-model="form.password" type="password" minlength="8" maxlength="72" :required="!editingId" autocomplete="new-password" /></label>
         <label>姓名 *<input v-model.trim="form.name" maxlength="100" required /></label>
         <label>Email<input v-model.trim="form.email" type="email" maxlength="100" /></label>
         <label>手機<input v-model.trim="form.phone" maxlength="20" /></label>
-        <label>角色 *<select v-model="form.role"><option value="USER">一般會員</option><option value="ADMIN">管理員</option></select></label>
+        <label>角色 *<select v-model="form.role"><option value="CUSTOMER">一般會員</option><option value="STAFF">員工</option><option value="ADMIN">管理員</option></select></label>
         <label>狀態 *<select v-model="form.status"><option value="ACTIVE">啟用</option><option value="DISABLED">停用</option></select></label>
       </div>
       <div class="form-actions">
@@ -131,15 +149,16 @@ onMounted(loadMembers)
           <thead><tr><th>ID</th><th>帳號</th><th>姓名</th><th>Email</th><th>手機</th><th>角色</th><th>狀態</th><th>建立時間</th><th>操作</th></tr></thead>
           <tbody>
             <tr v-for="member in members" :key="member.id">
-              <td>{{ member.id }}</td><td>{{ member.account }}</td><td>{{ member.name }}</td>
+              <td>{{ member.id }}</td><td>{{ member.username }}</td><td>{{ member.name }}</td>
               <td>{{ member.email || '-' }}</td><td>{{ member.phone || '-' }}</td>
-              <td><span class="badge">{{ roleLabels[member.role] || member.role }}</span></td><td><span class="badge">{{ statusLabels[member.status] || member.status }}</span></td>
+              <td><select v-if="auth.isAdmin" :value="member.role" @change="changeRole(member,$event.target.value)"><option value="CUSTOMER">一般會員</option><option value="STAFF">員工</option><option value="ADMIN">管理員</option></select><span v-else class="badge">{{ roleLabels[member.role] || member.role }}</span></td><td><span class="badge">{{ statusLabels[member.status] || member.status }}</span></td>
               <td>{{ formatDate(member.createdAt) }}</td>
-              <td class="row-actions"><button class="secondary small" @click="editMember(member)">編輯</button><button class="danger small" @click="removeMember(member)">刪除</button></td>
+              <td class="row-actions"><button class="secondary small" @click="toggleStatus(member)">{{member.status==='ACTIVE'?'停用':'啟用'}}</button><button v-if="auth.isAdmin" class="secondary small" @click="editMember(member)">編輯</button><button v-if="auth.isAdmin" class="danger small" @click="pendingDelete=member">刪除</button></td>
             </tr>
           </tbody>
         </table>
       </div>
     </div>
+    <ConfirmModal :open="Boolean(pendingDelete)" title="刪除會員" :message="`確定刪除會員「${pendingDelete?.name||''}」？此操作無法復原。`" :busy="saving" @cancel="pendingDelete=null" @confirm="removeMember(pendingDelete);pendingDelete=null" />
   </section>
 </template>

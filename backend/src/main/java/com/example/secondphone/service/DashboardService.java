@@ -16,14 +16,14 @@ import com.example.secondphone.repository.*;
 public class DashboardService {
     private static final List<String> INACTIVE_REPAIR_STATUSES=List.of("COMPLETED","RETURNED","CANCELLED");
     private final MemberRepository members; private final ProductRepository products;
-    private final OrderRepository orders; private final RepairOrderRepository repairs;
-    public DashboardService(MemberRepository members,ProductRepository products,OrderRepository orders,RepairOrderRepository repairs){this.members=members;this.products=products;this.orders=orders;this.repairs=repairs;}
+    private final OrderRepository orders; private final RepairOrderRepository repairs; private final TradeInRepository tradeIns;
+    public DashboardService(MemberRepository members,ProductRepository products,OrderRepository orders,RepairOrderRepository repairs,TradeInRepository tradeIns){this.members=members;this.products=products;this.orders=orders;this.repairs=repairs;this.tradeIns=tradeIns;}
 
     public DashboardSummaryResponse getSummary(){
         return new DashboardSummaryResponse(
                 members.count(),products.count(),orders.count(),repairs.count(),
                 orders.countByOrderStatus("PENDING"),repairs.countByRepairStatusNotIn(INACTIVE_REPAIR_STATUSES),
-                repairs.countByRepairStatus("COMPLETED"),products.countByStockLessThanEqual(5),
+                repairs.countByRepairStatus("COMPLETED"),products.countByStockLessThanEqual(5),tradeIns.count(),tradeIns.countByStatus("SUBMITTED"),
                 zeroIfNull(orders.sumTotalAmountByOrderStatusNot("CANCELLED")),
                 zeroIfNull(orders.sumTotalAmountByOrderStatus("COMPLETED")));
     }

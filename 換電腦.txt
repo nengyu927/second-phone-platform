@@ -1,0 +1,12 @@
+第一次使用新電腦	　　　　git clone → 執行 setup.ps1
+每天開始製作	　　　　git pull → 執行 start-all.ps1
+每天製作完成	　　　　git add → commit → push
+
+
+開啟前端	
+
+http://localhost:5173
+
+檢查後端	
+
+http://localhost:8080

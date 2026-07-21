@@ -8,6 +8,9 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
@@ -24,6 +27,9 @@ public class Product {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "product_code", unique = true, length = 40)
+    private String productCode;
+
     @NotBlank
     @Column(name = "product_name", nullable = false, length = 150)
     private String productName;
@@ -31,6 +37,14 @@ public class Product {
     @NotBlank
     @Column(nullable = false, length = 50)
     private String brand;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "brand_id")
+    private Brand brandEntity;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_id")
+    private Category category;
 
     @NotBlank
     @Column(nullable = false, length = 100)
@@ -51,10 +65,21 @@ public class Product {
     @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal price;
 
+    @DecimalMin("0.0")
+    @Column(precision = 12, scale = 2)
+    private BigDecimal cost = BigDecimal.ZERO;
+
     @NotNull
     @Min(0)
     @Column(nullable = false)
     private Integer stock = 0;
+
+    @Min(0)
+    @Column(name = "reserved_stock", nullable = false)
+    private Integer reservedStock = 0;
+
+    @Column(nullable = false)
+    private boolean featured;
 
     @Column(columnDefinition = "TEXT")
     private String description;
@@ -82,8 +107,11 @@ public class Product {
             stock = 0;
         }
         if (status == null || status.isBlank()) {
-            status = "AVAILABLE";
+            status = ProductStatus.ACTIVE.name();
         }
+        status = ProductStatus.normalize(status);
+        if (reservedStock == null) reservedStock = 0;
+        if (cost == null) cost = BigDecimal.ZERO;
         createdAt = now;
         updatedAt = now;
     }
@@ -95,10 +123,16 @@ public class Product {
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
+    public String getProductCode() { return productCode; }
+    public void setProductCode(String productCode) { this.productCode = productCode; }
     public String getProductName() { return productName; }
     public void setProductName(String productName) { this.productName = productName; }
     public String getBrand() { return brand; }
     public void setBrand(String brand) { this.brand = brand; }
+    public Brand getBrandEntity() { return brandEntity; }
+    public void setBrandEntity(Brand brandEntity) { this.brandEntity = brandEntity; }
+    public Category getCategory() { return category; }
+    public void setCategory(Category category) { this.category = category; }
     public String getModel() { return model; }
     public void setModel(String model) { this.model = model; }
     public String getStorageCapacity() { return storageCapacity; }
@@ -109,8 +143,15 @@ public class Product {
     public void setConditionLevel(String conditionLevel) { this.conditionLevel = conditionLevel; }
     public BigDecimal getPrice() { return price; }
     public void setPrice(BigDecimal price) { this.price = price; }
+    public BigDecimal getCost() { return cost; }
+    public void setCost(BigDecimal cost) { this.cost = cost; }
     public Integer getStock() { return stock; }
     public void setStock(Integer stock) { this.stock = stock; }
+    public Integer getReservedStock() { return reservedStock; }
+    public void setReservedStock(Integer reservedStock) { this.reservedStock = reservedStock; }
+    public int getAvailableStock() { return Math.max(0, (stock == null ? 0 : stock) - (reservedStock == null ? 0 : reservedStock)); }
+    public boolean isFeatured() { return featured; }
+    public void setFeatured(boolean featured) { this.featured = featured; }
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
     public String getImageUrl() { return imageUrl; }
