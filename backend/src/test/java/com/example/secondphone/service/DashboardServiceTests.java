@@ -16,9 +16,9 @@ import com.example.secondphone.repository.*;
 
 @ExtendWith(MockitoExtension.class)
 class DashboardServiceTests {
-    @Mock MemberRepository members; @Mock ProductRepository products; @Mock OrderRepository orders; @Mock RepairOrderRepository repairs;
+    @Mock MemberRepository members; @Mock ProductRepository products; @Mock OrderRepository orders; @Mock RepairOrderRepository repairs; @Mock TradeInRepository tradeIns;
     DashboardService service;
-    @BeforeEach void setUp(){service=new DashboardService(members,products,orders,repairs);}
+    @BeforeEach void setUp(){service=new DashboardService(members,products,orders,repairs,tradeIns);}
     @Test void calculatesFourMainCounts(){when(members.count()).thenReturn(10L);when(products.count()).thenReturn(20L);when(orders.count()).thenReturn(30L);when(repairs.count()).thenReturn(40L);DashboardSummaryResponse s=service.getSummary();assertEquals(10,s.getMemberCount());assertEquals(20,s.getProductCount());assertEquals(30,s.getOrderCount());assertEquals(40,s.getRepairCount());}
     @Test void calculatesPendingOrders(){when(orders.countByOrderStatus("PENDING")).thenReturn(3L);assertEquals(3,service.getSummary().getPendingOrderCount());}
     @Test void calculatesActiveRepairs(){when(repairs.countByRepairStatusNotIn(List.of("COMPLETED","RETURNED","CANCELLED"))).thenReturn(4L);assertEquals(4,service.getSummary().getActiveRepairCount());}

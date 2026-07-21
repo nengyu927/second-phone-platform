@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+import com.example.secondphone.dto.MemberRepairRequest;
 import com.example.secondphone.dto.RepairOrderRequest;
 import com.example.secondphone.dto.RepairOrderResponse;
 import com.example.secondphone.entity.Member;
