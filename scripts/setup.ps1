@@ -6,8 +6,8 @@ $ErrorActionPreference = 'Stop'
 
 function Find-ProjectDirectory([string]$Root, [string]$Marker) {
     $matches = @(Get-ChildItem -LiteralPath $Root -Directory | Where-Object {
-        Test-Path -LiteralPath (Join-Path $_.FullName $Marker)
-    })
+            Test-Path -LiteralPath (Join-Path $_.FullName $Marker)
+        })
     if ($matches.Count -ne 1) {
         throw "無法唯一辨識包含 $Marker 的專案資料夾，請檢查專案結構。"
     }
@@ -51,7 +51,34 @@ try {
         $jwtSecret = [Convert]::ToBase64String($bytes)
         $content = (Get-Content -LiteralPath $envExamplePath -Raw -Encoding UTF8).Replace('GENERATE_A_LOCAL_SECRET_DURING_SETUP', $jwtSecret)
         Set-Content -LiteralPath $envPath -Value $content -Encoding UTF8
-        Write-Host '已建立本機 .env，並產生隨機 JWT 密鑰。請依需要填入本機資料庫與管理員密碼。' -ForegroundColor Yellow
+        Write-Host '已建立本機 .env，並產生隨機 JWT 密鑰。' -ForegroundColor Yellow
+
+        # 詢問必填密碼
+        Write-Host ''
+        Write-Host '請輸入本機 MySQL root 密碼（直接按 Enter 略過，稍後可手動編輯 .env）：' -ForegroundColor Cyan -NoNewline
+        $dbPass = Read-Host
+        Write-Host '請輸入後台管理員密碼（直接按 Enter 使用預設 Admin@12345）：' -ForegroundColor Cyan -NoNewline
+        $adminPass = Read-Host
+        if ([string]::IsNullOrWhiteSpace($adminPass)) { $adminPass = 'Admin@12345' }
+
+        $finalContent = (Get-Content -LiteralPath $envPath -Raw -Encoding UTF8)
+        $finalContent = $finalContent -replace '(?m)^(DB_PASSWORD=).*$', "DB_PASSWORD=$dbPass"
+        $finalContent = $finalContent -replace '(?m)^(APP_ADMIN_PASSWORD=).*$', "APP_ADMIN_PASSWORD=$adminPass"
+        Set-Content -LiteralPath $envPath -Value $finalContent.TrimEnd() -Encoding UTF8
+        Write-Host '已寫入密碼至 .env。如需修改請直接編輯 .env 檔案。' -ForegroundColor Yellow
+    }
+    else {
+        Write-Host '.env 已存在，略過建立。' -ForegroundColor Green
+    }
+
+    # 建立 frontend/.env（如果不存在）
+    $frontendEnvPath = Join-Path $frontendDir '.env'
+    $frontendEnvExamplePath = Join-Path $frontendDir '.env.example'
+    if (-not (Test-Path -LiteralPath $frontendEnvPath)) {
+        if (Test-Path -LiteralPath $frontendEnvExamplePath) {
+            Copy-Item -LiteralPath $frontendEnvExamplePath -Destination $frontendEnvPath
+            Write-Host '已建立 frontend/.env。' -ForegroundColor Yellow
+        }
     }
 
     Write-Host "安裝前端套件：$frontendDir" -ForegroundColor Cyan
@@ -59,27 +86,32 @@ try {
     try {
         if (Test-Path -LiteralPath (Join-Path $frontendDir 'package-lock.json')) {
             & $npm ci
-        } else {
+        }
+        else {
             & $npm install
         }
         if ($LASTEXITCODE -ne 0) { throw '前端套件安裝失敗。' }
-    } finally { Pop-Location }
+    }
+    finally { Pop-Location }
 
     Write-Host "安裝後端套件：$backendDir" -ForegroundColor Cyan
     Push-Location $backendDir
     try {
         if (Test-Path -LiteralPath (Join-Path $backendDir 'mvnw.cmd')) {
             & (Join-Path $backendDir 'mvnw.cmd') clean install -DskipTests
-        } else {
+        }
+        else {
             $maven = Require-Command 'mvn.cmd' 'Maven'
             & $maven clean install -DskipTests
         }
         if ($LASTEXITCODE -ne 0) { throw '後端 Maven 安裝失敗。' }
-    } finally { Pop-Location }
+    }
+    finally { Pop-Location }
 
     Write-Host '環境準備完成。下一步請執行：' -ForegroundColor Green
     Write-Host 'powershell -ExecutionPolicy Bypass -File .\scripts\start-all.ps1'
-} catch {
+}
+catch {
     Write-Error "設定失敗：$($_.Exception.Message)"
     exit 1
 }
