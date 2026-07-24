@@ -27,10 +27,18 @@ try {
     Start-Process -FilePath 'powershell.exe' -WorkingDirectory $projectRoot -ArgumentList @('-NoExit','-ExecutionPolicy','Bypass','-File',"`"$backendScript`"")
     Start-Process -FilePath 'powershell.exe' -WorkingDirectory $projectRoot -ArgumentList @('-NoExit','-ExecutionPolicy','Bypass','-File',"`"$frontendScript`"")
 
-    Write-Host '已分別開啟前端與後端 PowerShell 視窗。' -ForegroundColor Green
-    Write-Host "前端：http://localhost:$frontendPort"
-    Write-Host "後端：http://localhost:$backendPort"
-    Write-Host "Swagger：http://localhost:$backendPort/swagger-ui/index.html"
+    Write-Host ''
+    Write-Host '================================================' -ForegroundColor DarkGray
+    Write-Host '  已開啟前端與後端視窗，請稍待幾秒讓伺服器啟動。' -ForegroundColor Green
+    Write-Host '------------------------------------------------' -ForegroundColor DarkGray
+    Write-Host "  前端    http://localhost:$frontendPort"
+    Write-Host "  後端    http://localhost:$backendPort"
+    Write-Host "  Swagger http://localhost:$backendPort/swagger-ui/index.html"
+    Write-Host '================================================' -ForegroundColor DarkGray
+    Write-Host ''
+    Write-Host '等待前端啟動後自動開啟瀏覽器（約 15 秒）...' -ForegroundColor Yellow
+    Start-Sleep -Seconds 15
+    Start-Process "http://localhost:$frontendPort"
 } catch {
     Write-Error "整合啟動失敗：$($_.Exception.Message)"
     exit 1
